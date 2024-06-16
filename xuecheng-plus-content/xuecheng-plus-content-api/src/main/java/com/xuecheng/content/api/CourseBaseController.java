@@ -2,14 +2,12 @@ package com.xuecheng.content.api;
 
 import com.xuecheng.base.model.PageParam;
 import com.xuecheng.base.model.PageResult;
-import com.xuecheng.content.model.dto.QueryCourseBaseDTO;
+import com.xuecheng.content.model.dto.*;
 import com.xuecheng.content.model.po.CourseBase;
 import com.xuecheng.content.service.CourseBaseService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
@@ -31,4 +29,28 @@ public class CourseBaseController {
 
         return courseBaseService.queryCourseBasePage(pageParam,queryCourseBaseDTO);
     }
+
+    @PostMapping("/course")
+    @ApiOperation("添加课程基本信息")
+    public CourseBaseInfoDto saveCourseBase(@RequestBody AddCourseDto addCourseDto){
+
+        return courseBaseService.saveCourse(addCourseDto);
+
+    }
+
+
+    @GetMapping("/course/{courseId}")
+    @ApiOperation("根据id查询课程信息")
+    public CourseBaseInfoDto getCourseBaseInfoDto(@PathVariable Long courseId){
+
+        return courseBaseService.getCourseBaseInfoDto(courseId);
+    }
+
+    @PutMapping("/course")
+    @ApiOperation("修改课程信息")
+    public CourseBaseInfoDto updateCourse(@RequestBody EditCourseDto editCourseDto){
+
+        return courseBaseService.updateCourse(editCourseDto);
+    }
+
 }
