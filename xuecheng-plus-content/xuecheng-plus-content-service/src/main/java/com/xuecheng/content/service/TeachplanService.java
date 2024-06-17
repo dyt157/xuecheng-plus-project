@@ -1,7 +1,12 @@
 package com.xuecheng.content.service;
 
+import cn.hutool.core.lang.tree.Tree;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xuecheng.content.model.dto.SaveTeachplanDto;
+import com.xuecheng.content.model.dto.TeachplanDto;
 import com.xuecheng.content.model.po.Teachplan;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +18,8 @@ import com.xuecheng.content.model.po.Teachplan;
  */
 public interface TeachplanService extends IService<Teachplan> {
 
+//    List<TeachplanDto> getTeachPlanById(Long courseId);
+    List<Tree<String>>getTeachPlanById(Long courseId);
+
+    void saveTeachPlan(SaveTeachplanDto saveTeachplanDto);
 }
