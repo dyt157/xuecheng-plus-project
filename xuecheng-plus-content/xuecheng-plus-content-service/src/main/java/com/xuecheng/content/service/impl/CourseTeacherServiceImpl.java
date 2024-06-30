@@ -7,6 +7,8 @@ import com.xuecheng.content.service.CourseTeacherService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * <p>
  * 课程-教师关系表 服务实现类
@@ -18,4 +20,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class CourseTeacherServiceImpl extends ServiceImpl<CourseTeacherMapper, CourseTeacher> implements CourseTeacherService {
 
+    @Override
+    public List<CourseTeacher> getCourseTeachers(Long courseId) {
+
+
+
+        return lambdaQuery().eq(CourseTeacher::getCourseId,courseId).list();
+    }
 }

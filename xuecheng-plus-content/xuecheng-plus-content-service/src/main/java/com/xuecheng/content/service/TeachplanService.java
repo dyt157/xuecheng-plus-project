@@ -22,4 +22,10 @@ public interface TeachplanService extends IService<Teachplan> {
     List<Tree<String>>getTeachPlanById(Long courseId);
 
     void saveTeachPlan(SaveTeachplanDto saveTeachplanDto);
+
+    void deletePlan(Long teachplanId);
+
+    void moveup(Long teachplanId);
+
+    void movedown(Long teachplanId);
 }

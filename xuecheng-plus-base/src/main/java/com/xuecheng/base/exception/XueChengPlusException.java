@@ -27,9 +27,9 @@ public class XueChengPlusException extends RuntimeException {
       this.resultEnum = resultEnum;
    }
 
-   public String getErrMessage() {
-      return message;
-   }
+//   public String getErrMessage() {
+//      return message;
+//   }
 
    /*public static void cast(CommonError commonError){
        throw new XueChengPlusException(commonError.getErrMessage());

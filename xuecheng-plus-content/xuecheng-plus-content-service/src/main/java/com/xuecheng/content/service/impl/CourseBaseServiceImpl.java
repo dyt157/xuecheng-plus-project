@@ -1,6 +1,7 @@
 package com.xuecheng.content.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xuecheng.base.constant.XcPlusConstant;
@@ -10,11 +11,8 @@ import com.xuecheng.base.model.PageParam;
 import com.xuecheng.base.model.PageResult;
 import com.xuecheng.content.mapper.CourseBaseMapper;
 import com.xuecheng.content.model.dto.*;
-import com.xuecheng.content.model.po.CourseBase;
-import com.xuecheng.content.model.po.CourseMarket;
-import com.xuecheng.content.service.CourseBaseService;
-import com.xuecheng.content.service.CourseCategoryService;
-import com.xuecheng.content.service.CourseMarketService;
+import com.xuecheng.content.model.po.*;
+import com.xuecheng.content.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +39,14 @@ public class CourseBaseServiceImpl extends ServiceImpl<CourseBaseMapper, CourseB
     @Resource
     private CourseCategoryService courseCategoryService;
 
+    @Resource
+    private TeachplanService teachplanService;
+
+    @Resource
+    private TeachplanMediaService teachplanMediaService;
+
+    @Resource
+    private  CourseTeacherService courseTeacherService;
     @Override
     public PageResult<CourseBase> queryCourseBasePage(PageParam pageParam, QueryCourseBaseDTO queryCourseBaseDTO) {
 
@@ -191,5 +197,25 @@ public class CourseBaseServiceImpl extends ServiceImpl<CourseBaseMapper, CourseB
         //查询修改后的记录，封装成dto返回
 
         return getCourseBaseInfoDto(editCourseDto.getId());
+    }
+
+    @Override
+    @Transactional
+    public void deleteCourse(Long courseId) {
+        //课程只有在未提交时才能删除（在前端已经做了处理，但为了保险，还是需要在后端做验证）
+        CourseBase courseBase = getById(courseId);
+        if (!courseBase.getAuditStatus().equals(XcPlusConstant.COURSE_AUDIT_STATUS_NOT_SUBMITTED)) {
+            //不是未提交的状态
+            throw new RuntimeException();
+
+        }
+
+        //删除课程信息，营销信息，课程计划，媒资信息，教师信息
+        removeById(courseId);
+        courseMarketService.removeById(courseId);
+        teachplanService.remove(new LambdaQueryWrapper<Teachplan>().eq(Teachplan::getCourseId,courseId));
+        teachplanMediaService.remove(new LambdaQueryWrapper<TeachplanMedia>().eq(TeachplanMedia::getCourseId,courseId));
+        courseTeacherService.remove(new LambdaQueryWrapper<CourseTeacher>().eq(CourseTeacher::getCourseId,courseId));
+
     }
 }
