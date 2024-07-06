@@ -1,19 +1,41 @@
-server:
-  servlet:
-    context-path: /content
-  port: 63040
+#server:
+#  servlet:
+#    context-path: /content
+#  port: 63040
 #微服务配置
 spring:
   application:
     name: content-api
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/xcplus_content?serverTimezone=UTC&userUnicode=true&useSSL=false&
-    username: root
-    password: root
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://127.0.0.1:3306/xcplus_content?serverTimezone=UTC&userUnicode=true&useSSL=false&
+#    username: root
+#    password: root
+  cloud:
+    nacos:
+      server-addr: 192.168.190.128:8848
+      discovery:
+        namespace: dev
+        group: xuecheng-plus-project
+      config:
+        namespace: dev
+        group: xuecheng-plus-project
+        file-extension: yaml
+        refresh-enabled: true
+        shared-configs:
+          - data-id: mapper-${spring.profiles.active}.yaml
+            group: xuecheng-plus-project
+            refresh: true
+          - data-id: logging-${spring.profiles.active}.yaml
+            group: xuecheng-plus-common
+            refresh: true
 
-mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
+  #profiles默认为dev
+  profiles:
+    active: dev
+
+#mybatis-plus:
+#  mapper-locations: classpath:mapper/*.xml
 # 日志文件配置路径
-#logging:
-#  config: classpath:log4j2-dev.xml
+logging:
+  config: classpath:log4j2-dev.xml

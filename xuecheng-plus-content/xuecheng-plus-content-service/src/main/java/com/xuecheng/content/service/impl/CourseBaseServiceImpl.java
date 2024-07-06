@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xuecheng.base.constant.XcPlusConstant;
 import com.xuecheng.base.exception.ResultEnum;
 import com.xuecheng.base.exception.XueChengPlusException;
-import com.xuecheng.base.model.PageParam;
+import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
 import com.xuecheng.content.mapper.CourseBaseMapper;
 import com.xuecheng.content.model.dto.*;
@@ -48,7 +48,7 @@ public class CourseBaseServiceImpl extends ServiceImpl<CourseBaseMapper, CourseB
     @Resource
     private  CourseTeacherService courseTeacherService;
     @Override
-    public PageResult<CourseBase> queryCourseBasePage(PageParam pageParam, QueryCourseBaseDTO queryCourseBaseDTO) {
+    public PageResult<CourseBase> queryCourseBasePage(PageParams pageParam, QueryCourseBaseDTO queryCourseBaseDTO) {
 
         Page<CourseBase> page = new Page<>(pageParam.getPageNo(), pageParam.getPageSize());
 
@@ -67,6 +67,8 @@ public class CourseBaseServiceImpl extends ServiceImpl<CourseBaseMapper, CourseB
         pageResult.setItems(page.getRecords());
         pageResult.setPageSize(pageParam.getPageSize());
         pageResult.setCounts(page.getTotal());
+
+        log.info("page对象：{}",pageResult);
 
         return pageResult;
     }

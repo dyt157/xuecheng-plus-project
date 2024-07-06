@@ -2,8 +2,10 @@ package com.xuecheng.base.model;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.List;
@@ -15,6 +17,8 @@ import java.util.List;
  */
 @ApiModel("分页结果响应类")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class PageResult<T> implements Serializable {
 
     // 数据列表

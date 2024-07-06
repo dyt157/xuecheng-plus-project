@@ -19,7 +19,8 @@ import java.util.List;
  */
 @Slf4j
 @Service
-public class DictionaryServiceImpl extends ServiceImpl<DictionaryMapper, Dictionary> implements DictionaryService {
+public class DictionaryServiceImpl
+        extends ServiceImpl<DictionaryMapper, Dictionary> implements DictionaryService {
 
     @Override
     public List<Dictionary> queryAll() {
@@ -28,6 +29,7 @@ public class DictionaryServiceImpl extends ServiceImpl<DictionaryMapper, Diction
 
         //重新编译就ok了，把原来的target文件删掉
         List<Dictionary> list = this.list();
+
 
         return list;
     }

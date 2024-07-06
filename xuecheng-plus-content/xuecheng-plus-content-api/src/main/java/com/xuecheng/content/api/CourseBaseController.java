@@ -1,6 +1,6 @@
 package com.xuecheng.content.api;
 
-import com.xuecheng.base.model.PageParam;
+import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
 import com.xuecheng.content.model.dto.*;
 import com.xuecheng.content.model.po.CourseBase;
@@ -24,7 +24,7 @@ public class CourseBaseController {
 
     @PostMapping("/course/list")
     @ApiOperation("条件分页查询课程基本信息")
-    public PageResult<CourseBase> list(PageParam pageParam,
+    public PageResult<CourseBase> list(PageParams pageParam,
                                        @RequestBody QueryCourseBaseDTO queryCourseBaseDTO){
 
         return courseBaseService.queryCourseBasePage(pageParam,queryCourseBaseDTO);

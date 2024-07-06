@@ -10,7 +10,7 @@ import lombok.Data;
  */
 @ApiModel(value = "分页相关参数类")
 @Data
-public class PageParam {
+public class PageParams {
 
     @ApiModelProperty("当前页码")
     private Long pageNo = 1L;
