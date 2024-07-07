@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,9 +41,9 @@ public class MediaFilesController {
 
     }
 
-    @PostMapping("/media/upload/coursefile")
+    @PostMapping("/upload/coursefile")
     @ApiOperation("上传媒体(图片)文件接口")
-    public UploadFileResultDto uploadFile(MultipartFile file) throws Exception {
+    public UploadFileResultDto uploadFile(@RequestParam("filedata") MultipartFile file) throws Exception {
         return mediaFileService.uploadFile(file);
     }
 

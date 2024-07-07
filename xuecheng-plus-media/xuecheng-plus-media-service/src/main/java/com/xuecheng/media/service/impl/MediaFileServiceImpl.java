@@ -59,7 +59,9 @@ public class MediaFileServiceImpl
     private String videoFiles;//视频文件桶
 
     @Override
-    public PageResult<MediaFiles> queryMediaFiles(Long companyId, PageParams pageParams, QueryMediaParamsDto queryMediaParamsDto) {
+    public PageResult<MediaFiles> queryMediaFiles(Long companyId,
+                                                  PageParams pageParams,
+                                                  QueryMediaParamsDto queryMediaParamsDto) {
 
         //构建查询条件对象
         LambdaQueryWrapper<MediaFiles> queryWrapper = new LambdaQueryWrapper<>();
@@ -107,6 +109,7 @@ public class MediaFileServiceImpl
                 .contentType().build();
         minioClient.uploadObject(uploadObjectArgs);*/
 
+
         //这里不通过本地文件缓存之后的方式上传，直接通过流上传
         PutObjectArgs putObjectArgs = PutObjectArgs.builder().bucket(files)
                 .object(objectName)
@@ -115,27 +118,31 @@ public class MediaFileServiceImpl
         minioClient.putObject(putObjectArgs);
 
 
-        //2、上传成功更新数据库的数据,包括media_file teachplan_media
-        MediaFiles mediaFiles = new MediaFiles();
+        //2、上传成功更新数据库的数据,media_file
+        MediaFiles mediaFiles = getById(md5Hex);
+        if (mediaFiles==null){//不需要重复添加
+            mediaFiles = new MediaFiles();
 
-        mediaFiles.setId(md5Hex);
-        mediaFiles.setCompanyId(12222111L);//先写死
-        mediaFiles.setCompanyName("java教育机构");
-        mediaFiles.setFilename(originalFilename);
-        mediaFiles.setFileType(XcPlusConstant.FILE_TYPE_IMAGE);//图片
-        mediaFiles.setTags(XcPlusConstant.COURSE_TAG_IMAGES);
-        mediaFiles.setBucket(files);
-        mediaFiles.setFilePath(objectName);
-        mediaFiles.setFileId(md5Hex);
-        mediaFiles.setUrl(files+"/"+objectName);
-        mediaFiles.setUsername("张先生");//先写死
-        mediaFiles.setCreateDate(LocalDateTime.now());
-        mediaFiles.setStatus("1");
-        mediaFiles.setAuditStatus(XcPlusConstant.OBJECT_AUDIT_STATUS_UNAUDITED);//默认为未审核??
-        mediaFiles.setFileSize(multipartFile.getSize());
+            mediaFiles.setId(md5Hex);
+            mediaFiles.setCompanyId(12222111L);//先写死
+            mediaFiles.setCompanyName("java教育机构");
+            mediaFiles.setFilename(originalFilename);
+            mediaFiles.setFileType(XcPlusConstant.FILE_TYPE_IMAGE);//图片
+            mediaFiles.setTags(XcPlusConstant.COURSE_TAG_IMAGES);
+            mediaFiles.setBucket(files);
+            mediaFiles.setFilePath(objectName);
+            mediaFiles.setFileId(md5Hex);
+            mediaFiles.setUrl("/"+files+"/"+objectName);
+            mediaFiles.setUsername("张先生");//先写死
+            mediaFiles.setCreateDate(LocalDateTime.now());
+            mediaFiles.setStatus("1");
+            mediaFiles.setAuditStatus(XcPlusConstant.OBJECT_AUDIT_STATUS_UNAUDITED);//默认为未审核??
+            mediaFiles.setFileSize(multipartFile.getSize());
 
-        //保存media_file表
-        save(mediaFiles);
+            //保存media_file表
+            save(mediaFiles);
+        }
+
 
         //返回UploadFileResultDto对象
         UploadFileResultDto uploadFileResultDto = new UploadFileResultDto();
