@@ -6,23 +6,21 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xuecheng.base.constant.XcPlusConstant;
 import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
+import com.xuecheng.base.model.RestResponse;
 import com.xuecheng.media.mapper.MediaFilesMapper;
 import com.xuecheng.media.model.dto.QueryMediaParamsDto;
 import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
 import com.xuecheng.media.service.MediaFileService;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.UploadObjectArgs;
+import io.minio.*;
 import io.minio.errors.*;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.http.MediaTypeFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -42,6 +41,7 @@ import java.util.List;
  * @date 2022/9/10 8:58
  */
 @Service
+@Slf4j
 //@PropertySource("classpath:bootstrap.yml")
 public class MediaFileServiceImpl
         extends ServiceImpl<MediaFilesMapper, MediaFiles> implements MediaFileService  {
@@ -50,7 +50,7 @@ public class MediaFileServiceImpl
     MediaFilesMapper mediaFilesMapper;
 
     @Resource
-    private MinioClient minioClient;
+    private  MinioClient minioClient;
 
     @Value("${minio.bucket.files}")
     private String files;//普通文件桶
@@ -88,7 +88,7 @@ public class MediaFileServiceImpl
      */
     @Override
     public UploadFileResultDto uploadFile(MultipartFile multipartFile) throws Exception{
-        //1、上传文件到minio，要不要判断是普通文件还是视频文件？？？
+        //1、上传文件到minio
         //存储到minio的文件，格式统一是 yyyy/MM/dd/md5值.后缀名
         String date = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
         //获取文件的md5值
@@ -150,4 +150,173 @@ public class MediaFileServiceImpl
 
         return uploadFileResultDto;
     }
+
+    @Override
+    public RestResponse checkFileExist(String fileMd5) {
+        //前端把即将上传的视频的md5值发送过来进行验证
+        //1、检查media_file中是否存在记录
+        MediaFiles mediaFiles = getById(fileMd5);
+        if (mediaFiles!=null){//数据库中存在记录
+
+            //2、检查minio中有没有对应的文件
+            GetObjectArgs getObjectArgs = GetObjectArgs.builder().bucket(videoFiles)
+                    .object(mediaFiles.getFilePath()).build();
+            GetObjectResponse getObjectResponse = null;
+            try {
+                getObjectResponse = minioClient.getObject(getObjectArgs);
+                //文件已存在就返回true，否则返回false
+                log.info("getObjectResponse对象：{}",getObjectResponse);
+                return getObjectResponse!=null?RestResponse.success(true):RestResponse.success(false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }finally {
+                try {
+                    if (getObjectResponse!=null)  getObjectResponse.close();  //流一定不要忘记关闭，否则会出错！！！
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        //程序能到这里也说明文件不存在，返回false
+        return RestResponse.success(false);
+
+
+    }
+
+    @Override
+    public RestResponse checkChunk(String fileMd5, Integer chunk) {
+        //检查分块是否存在
+        //参数chunk:指的是分块的序号
+        //通过前端传过来的md5值可以获取到这个视频文件在minio中的存放路径
+        String object  = fileMd5.substring(0,1)+"/"+fileMd5.substring(1,2)+"/"+fileMd5+"/chunk/"+chunk;
+
+        GetObjectArgs getObjectArgs = GetObjectArgs.builder()
+                .bucket(videoFiles).object(object)
+                .build();
+        GetObjectResponse getObjectResponse = null;
+        try {
+            getObjectResponse = minioClient.getObject(getObjectArgs);
+            log.info("chunk:{},getObjectResponse对象：{}",chunk,getObjectResponse);
+            //程序能到这里，说明没有抛出异常，说明分块存在，返回true
+            return RestResponse.success(true);
+        } catch (Exception e) {//这里有异常，可能是文件不存在
+            System.out.println(e.getMessage());
+        }finally {
+            try {
+                if (getObjectResponse!=null)  getObjectResponse.close();  //流一定不要忘记关闭，否则会出错！！！
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        //程序能到这里，说明文件不存在，返回false
+        return RestResponse.success(false);
+
+    }
+
+    @Override
+    public RestResponse uploadChunk(MultipartFile file, String fileMd5, Integer chunk) {
+        //上传分块文件
+        String objectName  = fileMd5.substring(0,1)+"/"+fileMd5.substring(1,2)+"/"+fileMd5+"/chunk/"+chunk;
+        try {
+            PutObjectArgs putObjectArgs = PutObjectArgs.builder().bucket(videoFiles)
+                    .object(objectName)
+                    .stream(file.getInputStream(), file.getInputStream().available(), -1)
+                    .build();
+            minioClient.putObject(putObjectArgs);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return RestResponse.success(false);
+        }
+
+        //上传成功返回true
+        return RestResponse.success(true);
+    }
+
+    /**
+     * 合并分块
+     * @param fileMd5 文件md5值
+     * @param fileName 文件名
+     * @param chunkTotal 分块总数，用于合并以及删除
+     * @return
+     */
+    @Override
+    public RestResponse mergeChunk(String fileMd5, String fileName, Integer chunkTotal) {
+        //合并分块文件
+        ArrayList<ComposeSource> composeSourceList = new ArrayList<>();
+        for (int i = 0; i < chunkTotal; i++) {
+            String chunkName  = fileMd5.substring(0,1)+"/"+fileMd5.substring(1,2)+"/"+fileMd5+"/chunk/"+i;
+            ComposeSource composeSource = ComposeSource.builder().bucket(videoFiles).object(chunkName).build();
+            composeSourceList.add(composeSource);
+        }
+
+        String objectName = fileMd5.substring(0,1)+"/"+fileMd5.substring(1,2)+"/"+fileMd5+"/"+fileName;
+
+        //合并分块（指定合并后的文件名以及分块的来源）
+        ComposeObjectArgs composeObjectArgs = ComposeObjectArgs.builder().bucket(videoFiles)
+                .object(objectName)
+                .sources(composeSourceList)//分块的来源
+                .build();
+        try {
+            //1、合并分块
+            minioClient.composeObject(composeObjectArgs);
+            //2、往media_file中添加数据
+            MediaFiles mediaFiles = getById(fileMd5);
+            if (mediaFiles==null){//不需要重复添加
+                mediaFiles = new MediaFiles();
+
+                mediaFiles.setId(fileMd5);
+                mediaFiles.setCompanyId(12222111L);//机构id，先写死
+                mediaFiles.setCompanyName("java教育机构");
+                mediaFiles.setFilename(fileName);
+                mediaFiles.setFileType(XcPlusConstant.FILE_TYPE_VIDEO);//图片
+                mediaFiles.setTags(XcPlusConstant.COURSE_TAG_VIDEO);
+                mediaFiles.setBucket(videoFiles);
+                mediaFiles.setFilePath(objectName);
+                mediaFiles.setFileId(fileMd5);
+                mediaFiles.setUrl("/"+videoFiles+"/"+objectName);
+                mediaFiles.setUsername("张先生");//先写死
+                mediaFiles.setCreateDate(LocalDateTime.now());
+                mediaFiles.setStatus("1");
+                mediaFiles.setAuditStatus(XcPlusConstant.OBJECT_AUDIT_STATUS_UNAUDITED);//默认为未审核??
+
+                //获取文件的大小
+                StatObjectArgs statObjectArgs = StatObjectArgs.builder().bucket(videoFiles)
+                        .object(objectName).build();
+                StatObjectResponse statObjectResponse = minioClient.statObject(statObjectArgs);
+                mediaFiles.setFileSize(statObjectResponse.size());
+
+                //保存media_file表
+                save(mediaFiles);
+            }
+
+
+            //3、清除分块数据（你可以逐个删除，当然最好的就是批量删除，更高效）
+            List<DeleteObject> objects = new ArrayList<>();
+            for (int i = 0; i < chunkTotal; i++) {
+                String chunkName  = fileMd5.substring(0,1)+"/"+fileMd5.substring(1,2)+"/"+fileMd5+"/chunk/"+i;
+                //参数为具体的文件全路径名称
+                DeleteObject deleteObject = new DeleteObject(chunkName);
+                objects.add(deleteObject);
+            }
+            //批量删除分块
+            RemoveObjectsArgs removeObjectsArgs = RemoveObjectsArgs.builder().bucket(videoFiles)
+                    .objects(objects).build();
+            Iterable<Result<DeleteError>> results = minioClient.removeObjects(removeObjectsArgs);
+            //这遍历操作一定要做，虽然看起来删除操作在上一步已经做完了
+            //但是minio中好像规定了在完成删除操作后，一定要对删除结果做一次遍历，不然删除操作会失败
+            for (Result<DeleteError> result : results) {//这一步一定不能省！！！
+                DeleteError error = result.get();
+                log.info("Error in deleting object " + error.objectName() + "; " + error.message());
+            }
+
+            return RestResponse.success(true);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return RestResponse.success(false);
+    }
+
+
 }

@@ -1,11 +1,19 @@
 package com.xuecheng.media;
 
-import io.minio.DownloadObjectArgs;
-import io.minio.MinioClient;
-import io.minio.RemoveObjectArgs;
-import io.minio.UploadObjectArgs;
+import io.minio.*;
+import io.minio.errors.*;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @Program:MinioTest
@@ -58,7 +66,7 @@ public class MinioTest {
     }
 
     @Test
-    public void getFile(){//查询文件/下载文件
+    public void downLoadFile(){//下载文件
 
         try {
             DownloadObjectArgs downloadObjectArgs = DownloadObjectArgs.builder()
@@ -73,4 +81,46 @@ public class MinioTest {
             System.out.println("下载失败");
         }
     }
+
+    @Test
+    public void getFile(){//获取文件
+        try {
+            GetObjectArgs getObjectArgs = GetObjectArgs.builder()
+                    .bucket("mediafiles")
+                    .object("test/1.jpg")//指定带路径的文件名
+                    .build();
+            GetObjectResponse getObjectResponse = minioClient.getObject(getObjectArgs);
+
+            System.out.println("文件存在");
+
+        } catch (Exception e) {//抛出异常，说明文件不存在
+            e.printStackTrace();
+            System.out.println("文件不存在");
+        }
+    }
+
+
+    @Test
+    public void deleteFile() throws Exception {
+        String fileMd5 = "255879536f30a93a43ddce3062f05958";
+        List<DeleteObject> objects = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            String chunkName  = fileMd5.substring(0,1)+"/"+fileMd5.substring(1,2)+"/"+fileMd5+"/chunk/"+i;
+            DeleteObject deleteObject = new DeleteObject(chunkName);
+            objects.add(deleteObject);
+        }
+        //批量删除分块
+        RemoveObjectsArgs removeObjectsArgs = RemoveObjectsArgs.builder().bucket("video")
+                .objects(objects).build();
+        Iterable<Result<DeleteError>> results = minioClient.removeObjects(removeObjectsArgs);
+        //遍历操作一定不能省，不然会删除失败！！！
+        for (Result<DeleteError> result : results) {
+            DeleteError error = result.get();
+            System.out.println("Error in deleting object " + error.objectName() + "; " + error.message());
+        }
+
+    }
+
+
+
 }

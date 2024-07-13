@@ -3,17 +3,11 @@ package com.xuecheng.media.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
+import com.xuecheng.base.model.RestResponse;
 import com.xuecheng.media.model.dto.QueryMediaParamsDto;
 import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
-import io.minio.errors.*;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
 
 /**
  * @author Mr.M
@@ -35,4 +29,12 @@ public interface MediaFileService extends IService<MediaFiles> {
 
 
     UploadFileResultDto uploadFile(MultipartFile file) throws Exception;
+
+    RestResponse checkFileExist(String fileMd5);
+
+    RestResponse checkChunk(String fileMd5, Integer chunk);
+
+    RestResponse uploadChunk(MultipartFile file, String fileMd5, Integer chunk);
+
+    RestResponse mergeChunk(String fileMd5, String fileName, Integer chunkTotal);
 }
