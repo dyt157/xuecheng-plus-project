@@ -1,12 +1,21 @@
 package com.xuecheng.media;
 
+import com.xuecheng.media.mapper.MediaProcessMapper;
+import com.xuecheng.media.model.po.MediaProcess;
+import com.xuecheng.media.service.MediaFileService;
+import com.xuecheng.media.service.impl.MediaFileServiceImpl;
 import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.annotation.Resource;
+import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -19,7 +28,7 @@ import java.util.stream.Stream;
  * @Program:MinioTest
  * @DATE: 2024/7/5
  */
-//@SpringBootTest(classes = MinioTest.class)
+@SpringBootTest(classes = MinioTest.class)
 public class MinioTest {
     //创建对应的MinioClient对象，这些对应的参数通常写在配置文件中
     MinioClient minioClient =
@@ -28,6 +37,12 @@ public class MinioTest {
                     .credentials("minioadmin", "minioadmin")//用户名 密码
                     .build();
 
+
+    @Autowired
+    private MediaProcessMapper mediaProcessMapper;
+
+    @Resource
+    private MediaFileServiceImpl mediaFileService;
 
     @Test
     public void uploadFile(){
@@ -118,6 +133,14 @@ public class MinioTest {
             DeleteError error = result.get();
             System.out.println("Error in deleting object " + error.objectName() + "; " + error.message());
         }
+
+    }
+
+    @Test
+    public void test() throws IOException {
+        System.out.println(mediaProcessMapper);
+        List<MediaProcess> mediaProcesses = mediaProcessMapper.selectListForExecutor(0, 1);
+        System.out.println(mediaProcesses);
 
     }
 

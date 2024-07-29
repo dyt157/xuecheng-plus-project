@@ -8,9 +8,12 @@ import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
 import com.xuecheng.base.model.RestResponse;
 import com.xuecheng.media.mapper.MediaFilesMapper;
+import com.xuecheng.media.mapper.MediaProcessMapper;
 import com.xuecheng.media.model.dto.QueryMediaParamsDto;
 import com.xuecheng.media.model.dto.UploadFileResultDto;
 import com.xuecheng.media.model.po.MediaFiles;
+import com.xuecheng.media.model.po.MediaProcess;
+import com.xuecheng.media.model.po.MediaProcessHistory;
 import com.xuecheng.media.service.MediaFileService;
 import io.minio.*;
 import io.minio.errors.*;
@@ -22,6 +25,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
@@ -57,6 +61,10 @@ public class MediaFileServiceImpl
 
     @Value("${minio.bucket.videofiles}")
     private String videoFiles;//视频文件桶
+
+
+    @Resource
+    private MediaProcessMapper mediaProcessMapper;
 
     @Override
     public PageResult<MediaFiles> queryMediaFiles(Long companyId,
@@ -241,6 +249,7 @@ public class MediaFileServiceImpl
      * @return
      */
     @Override
+    @Transactional
     public RestResponse mergeChunk(String fileMd5, String fileName, Integer chunkTotal) {
         //合并分块文件
         ArrayList<ComposeSource> composeSourceList = new ArrayList<>();
@@ -310,12 +319,36 @@ public class MediaFileServiceImpl
                 log.info("Error in deleting object " + error.objectName() + "; " + error.message());
             }
 
+            //记录待处理的任务，判断是不是avi格式的视频，如果是，则要记录到media_process表中
+            String suffix = fileName.substring(fileName.lastIndexOf(".") + 1);
+            if ("avi".equals(suffix)){
+                //记录任务
+                MediaProcess mediaProcess = new MediaProcess();
+                BeanUtils.copyProperties(mediaFiles,mediaProcess);
+
+                //视频处理状态
+                mediaProcess.setStatus("1");
+                //失败次数
+                mediaProcess.setFailCount(0);
+                mediaProcessMapper.insert(mediaProcess);
+
+            }
+
             return RestResponse.success(true);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+
+
+
         return RestResponse.success(false);
+    }
+
+
+
+    public void getList(){
+
     }
 
 

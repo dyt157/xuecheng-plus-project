@@ -37,4 +37,6 @@ public interface MediaFileService extends IService<MediaFiles> {
     RestResponse uploadChunk(MultipartFile file, String fileMd5, Integer chunk);
 
     RestResponse mergeChunk(String fileMd5, String fileName, Integer chunkTotal);
+    void getList();
+
 }

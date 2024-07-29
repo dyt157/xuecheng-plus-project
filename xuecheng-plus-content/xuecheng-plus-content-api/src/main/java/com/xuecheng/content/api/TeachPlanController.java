@@ -1,8 +1,11 @@
 package com.xuecheng.content.api;
 
 import cn.hutool.core.lang.tree.Tree;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.xuecheng.content.model.dto.BindTeachplanMediaDto;
 import com.xuecheng.content.model.dto.SaveTeachplanDto;
 import com.xuecheng.content.model.dto.TeachplanDto;
+import com.xuecheng.content.model.po.TeachplanMedia;
 import com.xuecheng.content.service.TeachplanService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -63,6 +66,18 @@ public class TeachPlanController {
     }
 
 
+    @PostMapping("/teachplan/association/media")
+    @ApiOperation("绑定媒体文件接口")
+    public void associationMedia(@RequestBody BindTeachplanMediaDto bindTeachplanMediaDto){
+
+        teachplanService.associationMedia(bindTeachplanMediaDto);
+    }
+
+    @DeleteMapping("/teachplan/association/media/{teachPlanId}/{mediaId}")
+    @ApiOperation("解除媒资文件的绑定关系")
+    public void deleteAssociation(@PathVariable String teachPlanId,@PathVariable String mediaId){
+        teachplanService.deleteAssociation(teachPlanId,mediaId);
+    }
 
 
 }

@@ -2,8 +2,8 @@ package com.xuecheng.content.service;
 
 import cn.hutool.core.lang.tree.Tree;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.xuecheng.content.model.dto.BindTeachplanMediaDto;
 import com.xuecheng.content.model.dto.SaveTeachplanDto;
-import com.xuecheng.content.model.dto.TeachplanDto;
 import com.xuecheng.content.model.po.Teachplan;
 
 import java.util.List;
@@ -28,4 +28,8 @@ public interface TeachplanService extends IService<Teachplan> {
     void moveup(Long teachplanId);
 
     void movedown(Long teachplanId);
+
+    void associationMedia(BindTeachplanMediaDto bindTeachplanMediaDto);
+
+    void deleteAssociation(String teachPlanId, String mediaId);
 }

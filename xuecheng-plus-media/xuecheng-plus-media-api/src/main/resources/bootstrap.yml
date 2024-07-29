@@ -17,10 +17,10 @@ spring:
           - data-id: media-service-${spring.profiles.active}.yaml
             group: xuecheng-plus-project
             refresh: true
-#        shared-configs:
-#          - data-id: swagger-${spring.profiles.active}.yaml
-#            group: xuecheng-plus-common
-#            refresh: true
+        shared-configs:
+          - data-id: mapper-${spring.profiles.active}.yaml
+            group: xuecheng-plus-project
+            refresh: true
           - data-id: logging-${spring.profiles.active}.yaml
             group: xuecheng-plus-common
             refresh: true

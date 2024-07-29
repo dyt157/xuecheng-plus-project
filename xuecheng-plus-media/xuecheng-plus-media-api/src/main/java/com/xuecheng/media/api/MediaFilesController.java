@@ -72,5 +72,11 @@ public class MediaFilesController {
         return mediaFileService.mergeChunk(fileMd5,fileName,chunkTotal);
     }
 
+    @GetMapping("/getList")
+    public void getList(){
+        mediaFileService.getList();
+    }
+
+
 
 }

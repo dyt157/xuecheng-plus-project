@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xuecheng.base.exception.ResultEnum;
 import com.xuecheng.base.exception.XueChengPlusException;
 import com.xuecheng.content.mapper.TeachplanMapper;
+import com.xuecheng.content.model.dto.BindTeachplanMediaDto;
 import com.xuecheng.content.model.dto.SaveTeachplanDto;
 import com.xuecheng.content.model.dto.TeachplanDto;
 import com.xuecheng.content.model.po.Teachplan;
@@ -16,14 +17,11 @@ import com.xuecheng.content.model.po.TeachplanMedia;
 import com.xuecheng.content.service.TeachplanMediaService;
 import com.xuecheng.content.service.TeachplanService;
 import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.matcher.HasSuperClassMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -191,6 +189,40 @@ public class TeachplanServiceImpl extends ServiceImpl<TeachplanMapper, Teachplan
 
 
 
+    }
+
+    /**
+     * 绑定媒资文件
+     * @param bindTeachplanMediaDto
+     */
+    @Override
+    @Transactional
+    public void associationMedia(BindTeachplanMediaDto bindTeachplanMediaDto) {
+        //因为一个课程计划只能绑定一个媒体文件，所以如果该课程计划之前已经绑定某个文件
+        // 需要先删除这个绑定关系，再重新添加
+        String mediaId = bindTeachplanMediaDto.getMediaId();
+        Long teachplanId = bindTeachplanMediaDto.getTeachplanId();
+
+        LambdaQueryWrapper<TeachplanMedia> wrapper = new LambdaQueryWrapper<TeachplanMedia>().eq(TeachplanMedia::getTeachplanId, teachplanId);
+        //有符合条件的就删除
+        teachplanMediaService.remove(wrapper);
+        //新增绑定关系
+        TeachplanMedia teachplanMedia = new TeachplanMedia();
+        teachplanMedia.setMediaId(mediaId);
+        teachplanMedia.setTeachplanId(teachplanId);
+        teachplanMedia.setMediaFilename(bindTeachplanMediaDto.getFileName());
+        teachplanMedia.setCreateDate(LocalDateTime.now());
+        teachplanMedia.setCreatePeople("张先生");//先写死
+        teachplanMedia.setCourseId(getById(teachplanId).getCourseId());
+        teachplanMediaService.save(teachplanMedia);
+
+    }
+
+    @Override
+    public void deleteAssociation(String teachPlanId, String mediaId) {
+        LambdaQueryWrapper<TeachplanMedia> wrapper = new LambdaQueryWrapper<TeachplanMedia>().eq(TeachplanMedia::getTeachplanId, teachPlanId).eq(TeachplanMedia::getMediaId, mediaId);
+
+        teachplanMediaService.remove(wrapper);
     }
 
     private List<Tree<String>> getTeachPlanTree(List<TeachplanDto> teachplanDtoList) {
